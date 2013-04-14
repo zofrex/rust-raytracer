@@ -24,7 +24,7 @@ fn main() {
       Err(err) => fail!(fmt!("failed to set video mode: %s", err))
     };
 
-    let mut image = vec::from_elem(600, vec::from_elem(800, 0u32));
+    let mut image = vec::from_elem(height as uint, vec::from_elem(width as uint, 0u32));
     for int::range(0, width) |x| {
       for int::range(0, height) |y| {
         let screen_raw = unsafe { *screen.raw };
