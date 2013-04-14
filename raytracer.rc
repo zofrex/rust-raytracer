@@ -1,8 +1,13 @@
 extern mod sdl;
+extern mod std;
 
 use core::rand::RngUtil;
+use std::timer::sleep;
+use std::uv;
 
 fn main() {
+  let iotask = ~uv::global_loop::get();
+
   do sdl::start {
 		sdl::init([sdl::InitVideo]);
 		sdl::wm::set_caption("rust-sdl demo - video", "rust-sdl");
@@ -37,6 +42,7 @@ fn main() {
 					_ => {}
 				}
 			}
+			sleep(iotask, 100);
 		}
 
 		sdl::quit();
