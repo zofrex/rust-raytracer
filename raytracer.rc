@@ -15,7 +15,7 @@ fn main() {
 
   do sdl::start {
     sdl::init([sdl::InitVideo]);
-    sdl::wm::set_caption("rust-sdl demo - video", "rust-sdl");
+    sdl::wm::set_caption("raytracer", "raytracer");
 
     let rng = rand::Rng();
     let screen = match sdl::video::set_video_mode(width, height, 32, [sdl::video::HWSurface],
