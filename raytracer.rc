@@ -24,6 +24,14 @@ fn main() {
     };
 
     let mut i = 0;
+    let mut image = core::vec::from_elem(600, core::vec::from_elem(800, 0u32));
+    for int::range(0, width) |x| {
+      for int::range(0, height) |y| {
+        let screen_raw = unsafe { *screen.raw };
+        image[y][x] = rng.gen::<sdl::video::Color>().to_mapped(screen_raw.format);
+      }
+    }
+
     loop main: {
       loop event: {
         match sdl::event::poll_event() {
@@ -38,7 +46,7 @@ fn main() {
           let pitch = ((*screen.raw).pitch) as int;
           for int::range(0, width) |x| {
             for int::range(0, height) |y| {
-              pixels[y * pitch / 4 + x] = rng.gen::<sdl::video::Color>().to_mapped((*screen.raw).format);
+              pixels[y * pitch / 4 + x] = image[y][x];
             }
           }
         }
