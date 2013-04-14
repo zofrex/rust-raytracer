@@ -32,12 +32,15 @@ fn main() {
           _ => {}
         }
       }
-      sleep(iotask, 100);
       screen.with_lock(|pixels| {
         unsafe {
           let pixels: &mut [uint32_t] = cast::transmute(pixels);
-          pixels[i] = rng.gen::<sdl::video::Color>().to_mapped((*screen.raw).format);
-          i = i + 1;
+          let pitch = ((*screen.raw).pitch) as int;
+          for int::range(0, width) |x| {
+            for int::range(0, height) |y| {
+              pixels[y * pitch / 4 + x] = rng.gen::<sdl::video::Color>().to_mapped((*screen.raw).format);
+            }
+          }
         }
       });
       screen.flip();
