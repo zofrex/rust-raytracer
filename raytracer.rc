@@ -2,8 +2,10 @@ extern mod sdl;
 extern mod std;
 
 use core::rand::RngUtil;
+use core::libc::uint32_t;
 use std::timer::sleep;
 use std::uv;
+use sdl::video::Color;
 
 fn main() {
   let iotask = ~uv::global_loop::get();
@@ -34,6 +36,7 @@ fn main() {
 
     screen.flip();
 
+    let mut i = 0;
     loop main: {
       loop event: {
         match sdl::event::poll_event() {
@@ -43,6 +46,14 @@ fn main() {
         }
       }
       sleep(iotask, 100);
+      screen.with_lock(|pixels| {
+        unsafe {
+          let pixels: &mut [uint32_t] = cast::transmute(pixels);
+          pixels[i] = rng.gen::<sdl::video::Color>().to_mapped((*screen.raw).format);
+          i = i + 1;
+        }
+      });
+      screen.flip();
     }
 
     sdl::quit();
