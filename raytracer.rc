@@ -3,6 +3,7 @@ extern mod std;
 
 use core::rand::RngUtil;
 use core::libc::uint32_t;
+use core::vec;
 use std::timer::sleep;
 use std::uv;
 use sdl::video::Color;
@@ -23,12 +24,11 @@ fn main() {
       Err(err) => fail!(fmt!("failed to set video mode: %s", err))
     };
 
-    let mut i = 0;
-    let mut image = core::vec::from_elem(600, core::vec::from_elem(800, 0u32));
+    let mut image = vec::from_elem(600, vec::from_elem(800, 0u32));
     for int::range(0, width) |x| {
       for int::range(0, height) |y| {
         let screen_raw = unsafe { *screen.raw };
-        image[y][x] = rng.gen::<sdl::video::Color>().to_mapped(screen_raw.format);
+        image[y][x] = rng.gen::<Color>().to_mapped(screen_raw.format);
       }
     }
 
