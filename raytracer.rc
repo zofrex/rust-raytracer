@@ -9,13 +9,15 @@ use sdl::video::Color;
 
 fn main() {
   let iotask = ~uv::global_loop::get();
+  let width = 800;
+  let height = 600;
 
   do sdl::start {
     sdl::init([sdl::InitVideo]);
     sdl::wm::set_caption("rust-sdl demo - video", "rust-sdl");
 
     let rng = rand::Rng();
-    let screen = match sdl::video::set_video_mode(800, 600, 32, [sdl::video::HWSurface],
+    let screen = match sdl::video::set_video_mode(width, height, 32, [sdl::video::HWSurface],
                                                               [sdl::video::DoubleBuf]) {
       Ok(screen) => screen,
       Err(err) => fail!(fmt!("failed to set video mode: %s", err))
