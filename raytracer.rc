@@ -52,6 +52,7 @@ fn main() {
         }
       });
       screen.flip();
+      sleep(iotask, 100);
     }
 
     sdl::quit();
