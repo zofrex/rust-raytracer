@@ -4,14 +4,23 @@ extern mod std;
 use core::rand::RngUtil;
 use core::libc::uint32_t;
 use core::vec;
+use core::comm::{stream, SharedChan};
 use std::timer::sleep;
 use std::uv;
 use sdl::video::Color;
+
+struct PixelResult {
+  x: int,
+  y: int,
+  color: Color
+}
 
 fn main() {
   let iotask = ~uv::global_loop::get();
   let width = 800;
   let height = 600;
+  let (port, chan) = stream();
+  let chan = SharedChan(chan);
 
   do sdl::start {
     sdl::init([sdl::InitVideo]);
@@ -24,11 +33,10 @@ fn main() {
       Err(err) => fail!(fmt!("failed to set video mode: %s", err))
     };
 
-    let mut image = vec::from_elem(height as uint, vec::from_elem(width as uint, 0u32));
     for int::range(0, width) |x| {
       for int::range(0, height) |y| {
-        let screen_raw = unsafe { *screen.raw };
-        image[y][x] = rng.gen::<Color>().to_mapped(screen_raw.format);
+        let pixel = PixelResult {x: x, y: y, color: rng.gen::<Color>()};
+        chan.send(pixel)
       }
     }
 
@@ -40,17 +48,19 @@ fn main() {
           _ => {}
         }
       }
-      screen.with_lock(|pixels| {
-        unsafe {
-          let pixels: &mut [uint32_t] = cast::transmute(pixels);
-          let pitch = ((*screen.raw).pitch) as int;
-          for int::range(0, width) |x| {
-            for int::range(0, height) |y| {
-              pixels[y * pitch / 4 + x] = image[y][x];
+      if(port.peek()) {
+        screen.with_lock(|pixels| {
+          unsafe {
+            let pixels: &mut [uint32_t] = cast::transmute(pixels);
+            let pitch = ((*screen.raw).pitch) as int;
+            let format = ((*screen.raw).format);
+            while(port.peek()) {
+              let pixel = port.recv();
+              pixels[pixel.y * pitch/ 4 + pixel.x] = pixel.color.to_mapped(format);
             }
           }
-        }
-      });
+        });
+      }
       screen.flip();
       sleep(iotask, 100);
     }
