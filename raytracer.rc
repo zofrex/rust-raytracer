@@ -7,7 +7,7 @@ use core::vec;
 use core::comm::{stream, SharedChan};
 use std::timer::sleep;
 use std::uv;
-use sdl::video::Color;
+use sdl::video::{Color,RGB};
 
 struct PixelResult {
   x: int,
@@ -35,8 +35,11 @@ fn main() {
 
     for int::range(0, width) |x| {
       for int::range(0, height) |y| {
-        let pixel = PixelResult {x: x, y: y, color: rng.gen::<Color>()};
-        chan.send(pixel)
+        let child_chan = chan.clone();
+        do spawn {
+          let pixel = ~PixelResult {x: x, y: y, color: RGB(255u8, 255u8, 255u8)};
+          child_chan.send(pixel);
+        }
       }
     }
 
