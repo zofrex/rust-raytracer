@@ -60,9 +60,9 @@ fn main() {
             }
           }
         });
+        screen.flip();
       }
-      screen.flip();
-      sleep(iotask, 100);
+      sleep(iotask, 33);
     }
 
     sdl::quit();
