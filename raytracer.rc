@@ -25,7 +25,6 @@ fn main() {
   let width = 800;
   let height = 600;
   let max_workers = 2;
-  let mut workers = max_workers;
 
   do sdl::start {
     sdl::init([sdl::InitVideo]);
@@ -33,6 +32,7 @@ fn main() {
     let ps = PortSet();
     let (timer_p, timer_c) = stream();
     ps.add(timer_p);
+    let (counter_p, counter_c) = stream();
     let mut running = true;
 
     let screen = match sdl::video::set_video_mode(width, height, 32, [sdl::video::HWSurface],
@@ -42,9 +42,14 @@ fn main() {
     };
 
     do spawn {
-      loop {
+      let mut workers = copy max_workers;
+      while workers > 0 {
         sleep(~uv::global_loop::get(), 100);
         timer_c.send(Timer);
+        if(counter_p.peek()) {
+          counter_p.recv();
+          workers -= 1;
+        }
       }
     }
 
@@ -96,8 +101,8 @@ fn main() {
                   frame = false;
                   true
                 },
-                Some(WorkDone()) => {
-                  println("A worker is done!");
+                Some(_) => {
+                  counter_c.send(());
                   true
                 }
               };
@@ -106,11 +111,8 @@ fn main() {
         });
         screen.flip();
       }
-      if !running {
-        break main;
-      }
       else {
-        sleep(iotask, 33);
+        sleep(iotask, 100);
       }
     }
 
