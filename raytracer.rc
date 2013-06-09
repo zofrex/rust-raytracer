@@ -3,11 +3,10 @@ extern mod std;
 
 use core::rand::RngUtil;
 use core::libc::uint32_t;
-use core::vec;
-use core::comm::{stream, SharedChan};
+use core::comm::{stream, PortSet};
 use std::timer::sleep;
 use std::uv;
-use sdl::video::{Color,RGB};
+use sdl::video::{Color};
 
 struct PixelResult {
   x: int,
@@ -19,29 +18,36 @@ fn main() {
   let iotask = ~uv::global_loop::get();
   let width = 800;
   let height = 600;
-  let (port, chan) = stream();
-  let chan = SharedChan(chan);
+  let max_workers = 4;
 
   do sdl::start {
     sdl::init([sdl::InitVideo]);
     sdl::wm::set_caption("raytracer", "raytracer");
 
-    let rng = rand::Rng();
     let screen = match sdl::video::set_video_mode(width, height, 32, [sdl::video::HWSurface],
                                                               [sdl::video::DoubleBuf]) {
       Ok(screen) => screen,
       Err(err) => fail!(fmt!("failed to set video mode: %s", err))
     };
 
-    for int::range(0, width) |x| {
-      for int::range(0, height) |y| {
-        let child_chan = chan.clone();
-        do spawn {
-          let pixel = ~PixelResult {x: x, y: y, color: RGB(255u8, 255u8, 255u8)};
-          child_chan.send(pixel);
+    let block_size = height / max_workers;
+    let ps = PortSet();
+    for int::range(0, max_workers) |worker| {
+      println(fmt!("%d", worker));
+      // 600 / 1 = 600 : 0 -> 600
+      // 600 / 2 = 300 : 0 -> 300, 300 -> 600
+      // 600 / 3 = 200 : 0 -> 200, 200 -> 400, 400 -> 600
+      let (port, chan) = stream();
+      do spawn {
+        let rng = rand::Rng();
+        for int::range(worker * block_size, (worker + 1) * block_size) |y| {
+          for int::range(0, width) |x| {
+            chan.send(~PixelResult {x: x as int, y: y as int, color: rng.gen::<Color>()});
+          }
         }
       }
-    }
+      ps.add(port);
+    };
 
     loop main: {
       loop event: {
@@ -51,14 +57,14 @@ fn main() {
           _ => {}
         }
       }
-      if(port.peek()) {
+      if(ps.peek()) {
         screen.with_lock(|pixels| {
           unsafe {
             let pixels: &mut [uint32_t] = cast::transmute(pixels);
             let pitch = ((*screen.raw).pitch) as int;
             let format = ((*screen.raw).format);
-            while(port.peek()) {
-              let pixel = port.recv();
+            while(ps.peek()) {
+              let pixel = ps.recv();
               pixels[pixel.y * pitch/ 4 + pixel.x] = pixel.color.to_mapped(format);
             }
           }
