@@ -16,7 +16,8 @@ struct PixelResult {
 
 enum Result {
   Timer,
-  Pixel(PixelResult)
+  Pixel(PixelResult),
+  WorkerDone
 }
 
 fn main() {
@@ -24,6 +25,7 @@ fn main() {
   let width = 800;
   let height = 600;
   let max_workers = 2;
+  let mut workers = max_workers;
 
   do sdl::start {
     sdl::init([sdl::InitVideo]);
@@ -39,14 +41,12 @@ fn main() {
       Err(err) => fail!(fmt!("failed to set video mode: %s", err))
     };
 
-    let (timer_p, timer_c) = stream();
     do spawn {
       loop {
         sleep(~uv::global_loop::get(), 100);
         timer_c.send(Timer);
       }
     }
-    ps.add(timer_p);
 
     let block_size = height / max_workers;
     for int::range(0, max_workers) |worker| {
@@ -62,6 +62,7 @@ fn main() {
             chan.send(Pixel(PixelResult {x: x as int, y: y as int, color: rng.gen::<Color>()}));
           }
         }
+        chan.send(WorkerDone);
       }
       ps.add(port);
     };
@@ -93,6 +94,10 @@ fn main() {
                 },
                 Some(Timer()) => {
                   frame = false;
+                  true
+                },
+                Some(WorkDone()) => {
+                  println("A worker is done!");
                   true
                 }
               };
