@@ -55,7 +55,6 @@ fn main() {
 
     let block_size = height / max_workers;
     for int::range(0, max_workers) |worker| {
-      println(fmt!("%d", worker));
       // 600 / 1 = 600 : 0 -> 600
       // 600 / 2 = 300 : 0 -> 300, 300 -> 600
       // 600 / 3 = 200 : 0 -> 200, 200 -> 400, 400 -> 600
@@ -89,10 +88,7 @@ fn main() {
             let mut frame = true;
             while(frame && running) {
               running = match ps.try_recv() {
-                None => {
-                  println("Done!");
-                  false
-                },
+                None => false,
                 Some(Pixel(pixel)) => {
                   pixels[pixel.y * pitch / 4 + pixel.x] = pixel.color.to_mapped(format);
                   true
